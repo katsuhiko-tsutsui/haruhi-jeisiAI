@@ -1,0 +1,56 @@
+<!-- faq_popup.html -->
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>FAQポップ</title>
+  <link rel="stylesheet" href="/static/css/faq_popup.css">
+</head>
+
+<!-- ✅ 背景真っ白に固定 -->
+<body style="margin:0; padding:0; background-color: white; height: 100vh;">
+
+<!-- ✅ FAQポップ本体 -->
+<div id="sakura-faq-popup-window">
+
+  <!-- ヘッダー -->
+  <div class="sakura-faq-header">
+    HARUHI ナビゲーターチャット
+    <button class="sakura-faq-close" onclick="window.parent.toggleFaqIframe()">✕</button>
+  </div>
+
+  <!-- 中身 -->
+  <div class="sakura-faq-body">
+  <!-- よくある質問（固定） -->
+  <div class="faq-section">
+    <div class="faq-section-title">よくある質問</div>
+    <div class="faq-list" id="faq-list">
+    <!-- FAQボタンはJSで入る -->
+  </div>
+</div>
+
+    <!-- よくある質問 -->
+    <div class="faq-list" id="faq-list">
+      <!-- FAQボタンはJSで入る -->
+    </div>
+
+    <!-- チャット本文 -->
+    <div class="faq-chat-messages" id="faq-chat-messages">
+      <div class="faq-sakura-message">こんにちは、さくらです🌸<br>ご質問どうぞ。</div>
+    </div>
+
+    <!-- 入力欄 -->
+    <form class="faq-chat-form" onsubmit="sendFaqChatMessage(event)">
+      <input type="text" id="faq-chat-input" placeholder="さくらに質問する…" required>
+      <button type="submit">➤</button>
+    </form>
+
+  </div>
+
+</div>
+
+<script src="/static/js/faq_popup.js"></script>
+
+</body>
+</html>

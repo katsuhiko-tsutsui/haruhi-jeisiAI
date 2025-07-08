@@ -1,0 +1,15 @@
+flask
+flask-cors
+openai
+python-dotenv
+markdown
+tiktoken
+pydantic
+orjson
+pandas
+faiss-cpu
+streamlit
+langchain
+supabase
+python-docx
+gunicorn

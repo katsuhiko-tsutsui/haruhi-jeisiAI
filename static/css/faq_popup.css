@@ -1,0 +1,129 @@
+/* FAQポップ本体 白背景 */
+#sakura-faq-popup-window {
+  background-color: white;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  border-radius: 10px;
+  overflow: hidden;
+  font-family: sans-serif;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2); /* 影 */
+  z-index: 99999;
+}
+
+/* ヘッダー */
+.sakura-faq-header {
+  background: #f3c6e4;
+  padding: 10px;
+  font-weight: bold;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* 本体body */
+.sakura-faq-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* よくある質問 → 固定高さ + スクロール無し */
+.faq-list {
+  flex-shrink: 0;
+  padding: 10px;
+  background: #fff;
+  border-bottom: 1px solid #ccc;
+  max-height: 120px; /* 適度な高さに調整可能 */
+  overflow: hidden;  /* スクロール無し */
+}
+
+.faq-item {
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  margin: 4px 0;
+  padding: 6px 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.faq-item:hover {
+  background-color: #f8f9fa;
+}
+
+/* チャット本文 → スクロール有り */
+.faq-chat-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 8px; /* 各メッセージの間のスペース */
+  padding: 10px;
+  overflow-y: auto;
+  flex: 1;
+  background: #fff0f5;
+  border-radius: 6px;
+}
+
+/* さくらメッセージ → 左寄せ */
+.faq-sakura-message {
+  align-self: flex-start;
+  background-color: #f9c2d1;
+  color: #333;
+  padding: 8px 12px;
+  border-radius: 12px;
+  max-width: 80%;
+  word-wrap: break-word;
+  clear: both; /* 横並び防止 */
+}
+
+/* ユーザーメッセージ → 右寄せ */
+.faq-user-message {
+  align-self: flex-end;
+  background-color: #aad8e6;
+  color: #000;
+  padding: 8px 12px;
+  border-radius: 12px;
+  max-width: 80%;
+  word-wrap: break-word;
+  clear: both; /* 横並び防止 */
+}
+
+/* 入力欄 → 固定 */
+.faq-chat-form {
+  display: flex;
+  padding: 8px;
+  border-top: 1px solid #ccc;
+  background: #f9e5f2;
+  flex-shrink: 0;
+}
+
+.faq-chat-form input {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+.faq-chat-form button {
+  width: 50px;
+  border: none;
+  background: #d281c0;
+  color: white;
+  border-radius: 6px;
+  margin-left: 8px;
+  cursor: pointer;
+}
+.faq-section-title {
+    font-weight: bold;
+    font-size: 16px;
+    padding: 8px 12px;
+    background-color: #fce8f0; /* 淡いピンク */
+    border: 2px solid #f3c6e4; /* ピンク系の枠線 */
+    border-radius: 8px;        /* 丸める */
+    color: #444;               /* やや濃いグレーで可読性UP */
+    margin: 8px 10px 6px 10px; /* 左右マージン＋下マージン */
+    text-align: center;        /* 中央寄せ */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* 軽い影 */
+}
