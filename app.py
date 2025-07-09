@@ -106,7 +106,7 @@ def chat_ui(user_id):
 
         try:
             response_obj = client.chat.completions.create(
-                model="4o",
+                model="gpt-4o",
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": message},
