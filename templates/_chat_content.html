@@ -27,33 +27,42 @@
   {% endfor %}
 </div>
 
-<!-- ✅ 中央下部にメッセージボックス -->
+<!-- ✅ 下部にメッセージボックス（右下ランチャーを避ける版） -->
 <div style="position: fixed; bottom: 20px; width: 100%; z-index: 999;">
-  <div style="width: 672px; margin: 0 auto; position: relative;">
+  <!-- ランチャーぶん右側に余白を作る（72pxがランチャー想定サイズ） -->
+  <div style="
+    position: relative;
+    margin-left: 20px;
+    margin-right: calc(20px + 72px + 16px + 16px); /* 左余白 + ランチャー + すき間 + 保険 */
+    max-width: 900px;  /* 好みで */
+  ">
     <form method="POST" action="/chat_ui/{{ user_id }}">
-  <input type="hidden" id="session_id_input_post" name="session_id" value="{{ request.args.get('session_id') }}">
-  <input type="hidden" name="mode" value="{{ mode }}">
-  <textarea name="message" placeholder="HARUHIに質問する..." required
-    style="width: 100%; height: 80px;
-           border-radius: 12px;
-           padding: 12px 15px;
-           font-size: 1rem;
-           line-height: 1.4;
-           resize: vertical;
-           display: block;
-           text-align: left;
-           box-sizing: border-box;"></textarea>
-  <button type="submit" aria-label="送信"
-    style="position: absolute; right: 10px; bottom: 8px;
-           background-color: #007bff; color: white;
-           border: none; border-radius: 50%;
-           width: 40px; height: 40px;
-           font-size: 18px; cursor: pointer;">
-    ➤
-  </button>
-</form>
+      <input type="hidden" id="session_id_input_post" name="session_id" value="{{ request.args.get('session_id') }}">
+      <input type="hidden" name="mode" value="{{ mode }}">
+      <textarea name="message" placeholder="HARUHIに質問する..." required
+        style="width: 100%; height: 80px;
+               border-radius: 12px;
+               /* 送信ボタンが被らないよう右パディング拡張 */
+               padding: 12px 56px 12px 15px;
+               font-size: 1rem;
+               line-height: 1.4;
+               resize: vertical;
+               display: block;
+               text-align: left;
+               box-sizing: border-box;"></textarea>
+      <!-- 青い送信ボタン（テキストエリアの右内側に固定） -->
+      <button type="submit" aria-label="送信"
+        style="position: absolute; right: 10px; bottom: 8px;
+               background-color: #007bff; color: white;
+               border: none; border-radius: 50%;
+               width: 40px; height: 40px;
+               font-size: 18px; cursor: pointer;">
+        ➤
+      </button>
+    </form>
   </div>
 </div>
+
 
 <!-- 🌸 スタイル整理 -->
 <style>
