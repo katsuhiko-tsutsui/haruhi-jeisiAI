@@ -1,79 +1,96 @@
-# routes.py
+# main/routes.py
 import os
 from datetime import datetime
-from flask import Blueprint, request, render_template, redirect, url_for, session, flash
+from flask import Blueprint, request
 from supabase_client import supabase
 import openai
 
+from .haruhi_rag_engine import RagEngine  # ✅ RAG本体
+
+# ===============================
+# Flask Blueprint 初期化
+# ===============================
 main_bp = Blueprint('main', __name__)
 
+# ===============================
+# OpenAIクライアント設定
+# ===============================
 client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-def save_chat_to_supabase(user_id, message, response):
+# ✅ RagEngineのインスタンス生成（明示的に閾値指定）
+rag = RagEngine(top_k=3, min_score=0.55)
+
+# ===============================
+# Supabaseログ保存
+# ===============================
+def save_chat_to_supabase(user_id, message, response, source="SAKURA", meta=None):
+    """チャット履歴をSupabaseに保存"""
     data = {
         "user_id": user_id,
         "message": message,
         "response": response,
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.utcnow().isoformat(),
+        "source": source,
     }
-
+    if meta:
+        data["meta"] = meta  # jsonb列を利用
     supabase.table("haruhi_chat_logs").insert(data).execute()
 
-# 🌸 FAQ回答取得
-def get_faq_answer(faq_question):
-    faq_response = supabase.table("haruhi_faqs") \
-        .select("answer") \
-        .ilike("question", f"%{faq_question}%") \
-        .execute()
 
-    print(f"🌸 Sakura Debug: FAQ response data →", faq_response.data)
-
-    if faq_response.data and len(faq_response.data) > 0:
-        answer_text = faq_response.data[0]["answer"]
-    else:
-        answer_text = "🌸 FAQに該当する回答が見つかりませんでした。"
-
-    return answer_text
-
-# 🌸 GPT回答取得
-def normal_chat_answer(question):
-    sakura_prompt = "あなたは HARUHI のナビゲーター『さくら』です。ユーザーの様々な疑問に対して丁寧に案内してください。"
-
+# ===============================
+# 通常GPTフォールバック（バックアップ用）
+# ===============================
+def normal_chat_answer(question: str) -> str:
+    """RAGが失敗した場合の標準GPT応答"""
+    sakura_prompt = (
+        "あなたはJEISIが開発する教育思考支援AI『HARUHI』のナビゲーター「さくら」です。"
+        "教育・哲学・AI倫理などの文脈で、利用者に丁寧に寄り添うトーンで回答してください。"
+    )
     response = client.chat.completions.create(
-        model="o3",
+        model="gpt-4o",
         messages=[
             {"role": "system", "content": sakura_prompt},
             {"role": "user", "content": question},
-        ]
+        ],
     )
+    return response.choices[0].message.content.strip()
 
-    sakura_reply = response.choices[0].message.content.strip()
-    return sakura_reply
 
-# 🌸 さくら応答メイン処理
+# ===============================
+# 🌸 SAKURAエンドポイント（RAG統合版）
+# ===============================
 @main_bp.route("/sakura", methods=["POST"])
 def sakura_answer():
     user_question = request.form.get("sakura_question", "").strip()
-    mode = request.form.get("mode", "").strip()
+    if not user_question:
+        return "質問が空です。"
 
-    print(f"🌸 Sakura Debug: Mode → {mode}")
-    print(f"🌸 Sakura Debug: Question → {user_question}")
+    print(f"🌸 Sakura Debug: {user_question}")
 
-    sakura_reply = ""
+    try:
+        # 1️⃣ まずRAGを実行
+        reply, meta = rag.answer_with_rag(user_question)
+        used = meta.get("used_faqs", [])
 
-    if mode == "faq":
-        # FAQクリック → Supabase先に探す
-        sakura_reply = get_faq_answer(user_question)
-    else:
-        # フォーム送信 → まずSupabase探し → なければGPT
-        faq_answer = get_faq_answer(user_question)
-        if "FAQに該当する回答が見つかりませんでした。" in faq_answer:
-            print("🌸 FAQ未ヒット → GPT回答")
-            sakura_reply = normal_chat_answer(user_question)
-        else:
-            print("🌸 FAQヒット → Supabase回答使用")
-            sakura_reply = faq_answer
+        # 2️⃣ RAG結果が空ならGPTフォールバック
+        if not used:
+            print("🌸 RAG未ヒット → GPT通常応答へフォールバック")
+            reply = normal_chat_answer(user_question)
+            meta = {"fallback": "gpt"}
 
-    save_chat_to_supabase(user_id="guest_user", message=user_question, response=sakura_reply)
+    except Exception as e:
+        # 3️⃣ 例外時もフォールバック
+        print("🌸 Sakura Error:", e)
+        reply = normal_chat_answer(user_question)
+        meta = {"fallback": "gpt", "error": str(e)}
 
-    return sakura_reply
+    # 4️⃣ Supabaseログ保存
+    save_chat_to_supabase(
+        user_id="guest_user",
+        message=user_question,
+        response=reply,
+        source="SAKURA",
+        meta=meta,
+    )
+
+    return reply
