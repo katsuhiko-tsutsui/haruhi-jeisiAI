@@ -1,129 +1,139 @@
-/* FAQポップ本体 白背景 */
-#sakura-faq-popup-window {
-  background-color: white;
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  border-radius: 10px;
-  overflow: hidden;
-  font-family: sans-serif;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.2); /* 影 */
-  z-index: 99999;
+/* 吸盤ランチャー */
+.sakura-launcher {
+    position: fixed;
+    bottom: 170px;
+    right: 24px;
+    cursor: pointer;
+    z-index: 3000;
+}
+
+.sakura-launcher-icon {
+    width: 170px;     /* 幅に合わせる */
+    height: auto;    /* 自動 */
+    opacity: 0.95;
+}
+
+/* 固定ウィンドウ */
+.sakura-faq-window {
+    position: fixed;
+    top: 50%;                 /* 画面中央（縦） */
+    right: 40px;              /* 右寄せ */
+    transform: translateY(-50%);  /* 縦方向中央に */
+    width: 450px;
+    height: 900px;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.25);
+    padding: 12px;
+    display: none;
+    flex-direction: column;
+    z-index: 3000;
 }
 
 /* ヘッダー */
-.sakura-faq-header {
-  background: #f3c6e4;
-  padding: 10px;
-  font-weight: bold;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-shrink: 0;
+.sakura-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
 }
 
-/* 本体body */
-.sakura-faq-body {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  overflow: hidden;
+.sakura-icon {
+    width: 32px;
+    height: 32px;
 }
 
-/* よくある質問 → 固定高さ + スクロール無し */
-.faq-list {
-  flex-shrink: 0;
-  padding: 10px;
-  background: #fff;
-  border-bottom: 1px solid #ccc;
-  max-height: 120px; /* 適度な高さに調整可能 */
-  overflow: hidden;  /* スクロール無し */
-}
-
-.faq-item {
-  background: white;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  margin: 4px 0;
-  padding: 6px 8px;
-  cursor: pointer;
-  font-size: 0.9rem;
-}
-
-.faq-item:hover {
-  background-color: #f8f9fa;
-}
-
-/* チャット本文 → スクロール有り */
-.faq-chat-messages {
-  display: flex;
-  flex-direction: column;
-  gap: 8px; /* 各メッセージの間のスペース */
-  padding: 10px;
-  overflow-y: auto;
-  flex: 1;
-  background: #fff0f5;
-  border-radius: 6px;
-}
-
-/* さくらメッセージ → 左寄せ */
-.faq-sakura-message {
-  align-self: flex-start;
-  background-color: #f9c2d1;
-  color: #333;
-  padding: 8px 12px;
-  border-radius: 12px;
-  max-width: 80%;
-  word-wrap: break-word;
-  clear: both; /* 横並び防止 */
-}
-
-/* ユーザーメッセージ → 右寄せ */
-.faq-user-message {
-  align-self: flex-end;
-  background-color: #aad8e6;
-  color: #000;
-  padding: 8px 12px;
-  border-radius: 12px;
-  max-width: 80%;
-  word-wrap: break-word;
-  clear: both; /* 横並び防止 */
-}
-
-/* 入力欄 → 固定 */
-.faq-chat-form {
-  display: flex;
-  padding: 8px;
-  border-top: 1px solid #ccc;
-  background: #f9e5f2;
-  flex-shrink: 0;
-}
-
-.faq-chat-form input {
-  flex: 1;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-}
-
-.faq-chat-form button {
-  width: 50px;
-  border: none;
-  background: #d281c0;
-  color: white;
-  border-radius: 6px;
-  margin-left: 8px;
-  cursor: pointer;
-}
-.faq-section-title {
+.sakura-title {
     font-weight: bold;
-    font-size: 16px;
+    margin-left: 8px;
+    flex-grow: 1;
+}
+
+.sakura-close {
+    border: none;
+    background: none;
+    font-size: 22px;
+    cursor: pointer;
+}
+
+/* FAQ一覧 */
+.sakura-faq-list {
+    max-height: 150px;
+    overflow-y: auto;
+    margin-bottom: 10px;
+}
+
+.sakura-faq-list button {
+    width: 100%;
+    background: #f1f3ff;
+    padding: 10px;
+    border-radius: 10px;
+    border: none;
+    margin-bottom: 6px;
+    text-align: left;
+    cursor: pointer;
+}
+
+/* さくらチャット */
+.sakura-chat-area {
+    flex-grow: 1;
+    overflow-y: auto;
+    margin-top: 8px;
+    padding: 8px;
+    background: #fafaff;
+    border-radius: 10px;
+
+    display: flex;           /* 追加 */
+    flex-direction: column;  /* 追加 */
+    gap: 6px;                /* 吹き出し間隔 */
+}
+
+/* 入力欄 */
+.sakura-input-area {
+    display: flex;
+    margin-top: 8px;
+}
+
+#sakura-input {
+    flex-grow: 1;
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+}
+
+#sakura-send-btn {
+    padding: 8px 14px;
+    margin-left: 6px;
+    border-radius: 8px;
+    border: none;
+    background: #ffb7d5;
+    cursor: pointer;
+}
+
+#sakura-send-btn:hover {
+    background: #ff9cc8;
+}
+
+/* さくら（左側） */
+.sakura-bubble {
+    align-self: flex-start;      /* 左寄せ */
+    background: #f9c2d8;
     padding: 8px 12px;
-    background-color: #fce8f0; /* 淡いピンク */
-    border: 2px solid #f3c6e4; /* ピンク系の枠線 */
-    border-radius: 8px;        /* 丸める */
-    color: #444;               /* やや濃いグレーで可読性UP */
-    margin: 8px 10px 6px 10px; /* 左右マージン＋下マージン */
-    text-align: center;        /* 中央寄せ */
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* 軽い影 */
+    border-radius: 12px;
+    max-width: 85%;
+    word-wrap: break-word;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+/* ユーザー（右側） */
+.user-bubble {
+    align-self: flex-end;        /* 右寄せ */
+    background: #aad8f0;
+    padding: 8px 12px;
+    border-radius: 12px;
+    max-width: 85%;
+    word-wrap: break-word;
+    font-size: 0.9rem;
+    line-height: 1.4;
 }

@@ -1,18 +1,9 @@
-<!-- _chat_sessions.html に追加：履歴の一番上に「新しいチャット」 -->
-<div style="margin-bottom:10px;">
-  <button type="button" id="new-chat-btn" class="btn btn-outline-secondary btn-sm w-100 text-start">
-    🆕 新しいチャット
-  </button>
-</div>
+<div class="sessions-container">
 
-<h5>履歴一覧</h5>
-{% for sid, log in sessions.items() %}
-  <div style="margin-bottom:10px;">
-    <form method="GET" action="/chat_ui/{{ user_id }}">
-      <input type="hidden" name="session_id" value="{{ sid }}">
-      <button type="submit" class="btn btn-outline-secondary btn-sm w-100 text-start">
-        {{ log.message[:20] }}...
-      </button>
-    </form>
-  </div>
-{% endfor %}
+    <!-- 新規セッション -->
+    <button id="new-chat-btn" class="new-chat-btn">＋ 新しいチャット</button>
+
+    <!-- セッション一覧 -->
+    <div id="session-list" class="session-list"></div>
+
+</div>

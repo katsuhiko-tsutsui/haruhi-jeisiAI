@@ -1,129 +1,81 @@
-// static/js/faq_popup.js
+let sakuraVisible = false;
 
-document.addEventListener("DOMContentLoaded", async () => {
-  const faqList = document.getElementById("faq-list");  // faq_popup.html 内の id=faq-list に FAQを入れる
+// --- 初期メッセージ用フラグ ---
+let sakuraInitialAdded = false;
 
-  try {
-    const res = await fetch("https://wsyyeqpnwoznwfmzydvl.supabase.co/rest/v1/haruhi_faqs?select=question,importance&order=importance.desc&limit=3", {
-      headers: {
-        apikey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndzeXllcXBud296bndmbXp5ZHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg1MjMzODMsImV4cCI6MjA2NDA5OTM4M30.b214yzmrZ2aTFK1CWlCb5wrZroUg2GBG9E_8E3D4hDE",
-        Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndzeXllcXBud296bndmbXp5ZHZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg1MjMzODMsImV4cCI6MjA2NDA5OTM4M30.b214yzmrZ2aTFK1CWlCb5wrZroUg2GBG9E_8E3D4hDE"
-      }
-    });
+// FAQウィンドウ開閉
+function toggleSakuraFAQ() {
+    sakuraVisible = !sakuraVisible;
 
-    const faqs = await res.json();
+    const win = document.getElementById("sakura-faq-window");
 
-    // FAQボタン生成
-    faqs.forEach(faq => {
-      const btn = document.createElement("div");
-      btn.className = "faq-item";
-      btn.textContent = faq.question;
+    if (sakuraVisible) {
+        win.style.display = "flex";
+        loadSakuraFAQs();
 
-      // FAQクリック時の処理
-      btn.addEventListener("click", async function() {
-        const message = this.textContent;
-        console.log("FAQクリック: ", message);
-
-        const messagesDiv = document.getElementById("faq-chat-messages");
-
-        // ユーザーのメッセージ表示
-        const userMessageDiv = document.createElement("div");
-        userMessageDiv.className = "faq-user-message";
-        userMessageDiv.innerHTML = message;
-        messagesDiv.appendChild(userMessageDiv);
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
-
-        try {
-          const res = await fetch("/sakura", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/x-www-form-urlencoded",
-            },
-            body: `sakura_question=${encodeURIComponent(message)}&mode=faq`,
-          });
-
-          if (!res.ok) {
-            throw new Error(`HTTP error! status: ${res.status}`);
-          }
-
-          const sakuraAnswer = await res.text();
-
-          // さくらの返答を表示
-          const sakuraReplyDiv = document.createElement("div");
-          sakuraReplyDiv.className = "faq-sakura-message";
-          sakuraReplyDiv.innerHTML = sakuraAnswer;
-          messagesDiv.appendChild(sakuraReplyDiv);
-          messagesDiv.scrollTop = messagesDiv.scrollHeight;
-
-        } catch (err) {
-          console.error("🌸さくらへの送信エラー", err);
-
-          const errorDiv = document.createElement("div");
-          errorDiv.className = "faq-sakura-message";
-          errorDiv.innerHTML = "🌸 エラーが発生しました。";
-          messagesDiv.appendChild(errorDiv);
-          messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        // -----------------------------
+        // ★ 初回だけ初期メッセージを追加
+        // -----------------------------
+        if (!sakuraInitialAdded) {
+            appendSakuraBubble(
+                "sakura",
+                "ナビゲーターのさくらです。HARUHIの使い方や思考モードの特徴など、何でも聞いてくださいね。"
+            );
+            sakuraInitialAdded = true;
         }
-      });
 
-      // ボタンをリストに追加
-      faqList.appendChild(btn);
-    });
-
-  } catch (e) {
-    console.error("FAQの取得に失敗しました", e);
-  }
-});
-
-// ✅ 通常の送信フォームからの送信はこちらで処理
-async function sendFaqChatMessage(event) {
-  event.preventDefault();
-
-  const input = document.getElementById("faq-chat-input");
-  const message = input.value.trim();
-
-  if (!message) return;
-
-  const messagesDiv = document.getElementById("faq-chat-messages");
-
-  // 自分の発言を表示
-  const userMessageDiv = document.createElement("div");
-  userMessageDiv.className = "faq-user-message";
-  userMessageDiv.innerHTML = message;
-  messagesDiv.appendChild(userMessageDiv);
-  messagesDiv.scrollTop = messagesDiv.scrollHeight;
-
-  // フォームをリセット
-  input.value = "";
-
-  try {
-    const res = await fetch("/sakura", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: `sakura_question=${encodeURIComponent(message)}&mode=form`,
-    });
-
-    if (!res.ok) {
-      throw new Error(`HTTP error! status: ${res.status}`);
+    } else {
+        win.style.display = "none";
     }
+}
 
-    const sakuraAnswer = await res.text();
+// FAQ一覧ロード
+async function loadSakuraFAQs() {
+    const res = await fetch("/get_faqs");
+    const data = await res.json();
 
-    // さくら回答を表示
-    const sakuraReplyDiv = document.createElement("div");
-    sakuraReplyDiv.className = "faq-sakura-message";
-    sakuraReplyDiv.innerHTML = sakuraAnswer;
-    messagesDiv.appendChild(sakuraReplyDiv);
-    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    const faqList = document.getElementById("sakura-faq-list");
+    faqList.innerHTML = "";
 
-  } catch (err) {
-    console.error("さくらへの送信エラー", err);
-    const errorDiv = document.createElement("div");
-    errorDiv.className = "faq-sakura-message";
-    errorDiv.innerHTML = "🌸 エラーが発生しました。";
-    messagesDiv.appendChild(errorDiv);
-    messagesDiv.scrollTop = messagesDiv.scrollHeight;
-  }
+    data.faqs.forEach(faq => {
+        const btn = document.createElement("button");
+        btn.textContent = faq.question;
+
+        btn.addEventListener("click", () => {
+            document.getElementById("sakura-input").value = faq.question;
+        });
+
+        faqList.appendChild(btn);
+    });
+}
+
+// さくらAIへ質問送信
+async function sendSakuraFAQ() {
+    const inputField = document.getElementById("sakura-input");
+    const question = inputField.value.trim();
+    if (!question) return;
+
+    appendSakuraBubble("user", question);
+    inputField.value = "";
+
+    const res = await fetch("/sakura_faq_chat", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ question: question })
+    });
+
+    const data = await res.json();
+    appendSakuraBubble("sakura", data.answer);
+}
+
+// 吹き出し描画
+function appendSakuraBubble(role, text) {
+    const area = document.getElementById("sakura-chat-area");
+
+    const div = document.createElement("div");
+    div.classList.add(role === "sakura" ? "sakura-bubble" : "user-bubble");
+    div.textContent = text;
+
+    area.appendChild(div);
+    area.scrollTop = area.scrollHeight;
 }

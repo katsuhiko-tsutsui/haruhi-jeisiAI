@@ -1,0 +1,272 @@
+body {
+    margin: 0;
+    padding: 0;
+    background: #fafafa;
+    font-family: "Noto Sans JP", sans-serif;
+}
+
+.haruhi-layout {
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* 左パネル */
+.session-panel {
+    width: 260px;
+    background: #fff;
+    border-right: 1px solid #ddd;
+    overflow-y: auto;
+    padding: 15px;
+}
+
+/* 右パネル */
+.chat-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+/* タイトル */
+.haruhi-title-box {
+    padding: 12px 20px;
+    background: #ffffff;
+    border-bottom: 1px solid #e4e4e4;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.haruhi-title {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.haruhi-subtitle {
+    font-size: 12px;
+    color: #777;
+}
+
+/* 思考モード */
+.mode-select-area {
+    position: absolute;
+    right: 20px;
+    top: 70px;
+    width: 200px;
+    z-index: 9;
+}
+
+/* メッセージエリア */
+.chat-content-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 0 120px 0;
+}
+
+.chat-log-content {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 0 20px;
+}
+
+/* 吹き出し */
+.user-message {
+    align-self: flex-end;
+    background: #aad8f0;
+    color: #000;
+    padding: 10px 14px;
+    border-radius: 12px 12px 4px 12px;
+    max-width: 80%;
+    margin: 8px 0;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    word-wrap: break-word;
+}
+
+.assistant-message {
+    width: 100%;
+    display: flex;
+    justify-content: center;  /* 中央寄せ */
+
+    margin: 12px 0;
+}
+
+.assistant-message > div {
+    background: #ffffff;
+    color: #222;
+    padding: 16px 20px;
+    border-radius: 10px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    max-width: 700px;       /* GPT の幅感 */
+    width: 100%;
+    font-size: 1rem;
+    line-height: 1.7;
+    white-space: pre-wrap;
+}
+
+/* 入力欄（固定） */
+.input-area {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    padding: 12px 20px;
+    background: #fff;
+    display: flex;
+    gap: 12px;
+    border-top: 1px solid #ddd;
+}
+
+.send-btn {
+    width: 60px;
+}
+
+/* FAQランチャー */
+.faq-launcher {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 90px;
+    height: 90px;
+    cursor: pointer;
+    z-index: 1000;
+}
+
+.faq-btn-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+/* FAQポップアップ */
+.faq-popup {
+    position: fixed;
+    bottom: 120px;
+    right: 20px;
+    width: 380px;
+    height: 520px;
+    background: #fff;
+    box-shadow: 0 4px 20px rgba(0,0,0,.2);
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    z-index: 2000;
+}
+
+.faq-header {
+    padding: 10px 14px;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    justify-content: space-between;
+}
+
+.close-btn {
+    border: none;
+    background: transparent;
+    font-size: 20px;
+}
+
+/* FAQ中身 */
+.faq-list {
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+.faq-item {
+    padding: 8px;
+    margin-bottom: 6px;
+    border-radius: 8px;
+    background: #f5f5f5;
+    cursor: pointer;
+}
+
+.faq-chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.faq-user-message {
+    align-self: flex-end;
+    background: #e0f7fa;
+    padding: 8px;
+    border-radius: 8px;
+    margin: 4px 0;
+}
+
+.faq-sakura-message {
+    align-self: flex-start;
+    background: #fff4f6;
+    padding: 8px;
+    border-radius: 8px;
+    margin: 4px 0;
+}
+
+.faq-input-area {
+    padding: 10px;
+    display: flex;
+    gap: 10px;
+}
+.session-item {
+    padding: 10px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.session-item.active-session {
+    background-color: #e9f0ff;
+    border-left: 4px solid #4a8af4;
+    font-weight: bold;
+}
+
+.session-title {
+    flex-grow: 1;
+}
+
+.edit-icon {
+    cursor: pointer;
+    opacity: 0.6;
+    margin-left: 10px;
+    font-size: 14px;
+}
+
+.edit-icon:hover {
+    opacity: 1;
+}
+
+.message-input-container {
+    margin-right: 150px !important;  /* 右下の吸盤領域を避ける分 */
+}
+.assistant-message {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin: 14px 0;
+}
+
+.assistant-card {
+    background: #ffffff;
+    padding: 18px 22px;
+    border-radius: 12px;
+    max-width: 720px;
+    width: 100%;
+    font-size: 1rem;
+    line-height: 1.75;
+    color: #222;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    white-space: pre-wrap;
+}
+.user-message {
+    align-self: flex-end;
+    background: #aad8f0;
+    padding: 10px 14px;
+    border-radius: 12px 12px 4px 12px;
+    max-width: 75%;
+    margin: 10px 0;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    white-space: pre-wrap;
+}

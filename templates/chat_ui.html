@@ -1,150 +1,69 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>HARUHI チャットUI</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <style>
-  .main-container {
-    display: flex;
-    height: 100vh;
-  }
-  .sidebar {
-    width: 15%;
-    background-color: #f0f0f0;
-    overflow-y: auto;
-    padding: 10px;
-    border-right: 1px solid #ccc;
-  }
-  .chat-area {
-    flex: 1;
-    position: relative;
-    overflow-y: auto;
-    padding: 20px;
-  }
+    <meta charset="UTF-8">
+    <title>HARUHI ver.1.20</title>
 
-  /* ✅ 追加：ランチャー画像固定 */
-  #sakura-faq-popup-launcher {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    z-index: 9999;
-    cursor: pointer;
-  }
-</style>
+    <!-- Bootstrap -->
+    <link 
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    >
+
+    <!-- HARUHI UI全体スタイル -->
+    <link rel="stylesheet" href="/static/css/haruhi_ui.css">
 </head>
+
 <body>
-  <div class="main-container">
-    <div class="sidebar">
-      {% include '_chat_sessions.html' %}
-  </div>
-    <div class="chat-area">
-      {% include '_chat_content.html' %}
+
+<div class="haruhi-layout">
+
+    <!-- 左：セッション一覧 -->
+    <div class="session-panel">
+        {% include "_chat_sessions.html" %}
     </div>
-  </div>
+
+    <!-- 右：HARUHI本体 -->
+    <div class="chat-panel">
+
+        <!-- HARUHI タイトル -->
+        <div class="haruhi-title-box">
+            <div class="haruhi-title">教育思考支援AI | HARUHI ver.1.30</div>
+            <div class="haruhi-subtitle">Human-Augmented Reflective Understanding for Holistic Intelligence</div>
+        </div>
+
+        <!-- 思考モード -->
+        <div class="mode-select-area">
+            <select id="thinking-mode" class="form-select form-select-sm">
+                <option value="reflective">内省型 (Reflective)</option>
+                <option value="creative">創造型 (Creative)</option>
+                <option value="factual">事実型 (Factual)</option>
+                <option value="metacognitive">省察促進型 (Meta-Cognitive)</option>
+            </select>
+        </div>
+
+        <!-- チャットコンテンツ -->
+        <div class="chat-content-area">
+            {% include "_chat_content.html" %}
+        </div>
+
+        <!-- 入力エリア（固定） -->
+        <div class="input-area">
+            <textarea id="user-input" class="form-control" placeholder="HARUHIに質問する..." rows="2"></textarea>
+            <button id="send-button" class="btn btn-primary send-btn">➤</button>
+        </div>
+
+    </div>
+</div>
+
+{% include "faq_popup.html" %}
+
+<!-- JS -->
+<script src="/static/js/chat_handler.js"></script>
+<script src="/static/js/faq_popup.js"></script>
+
+<!-- CSS -->
+<link rel="stylesheet" href="/static/css/faq_popup.css">
+
 </body>
-<!-- FAQランチャー画像 -->
-  <div id="sakura-faq-popup-launcher" onclick="toggleFaqIframe()">
-    <img src="{{ url_for('static', filename='img/sakura_popup.png') }}" alt="FAQを見る" style="width: 200px;" />
-  </div>
-
-<!-- ✅ FAQポップiframe -->
-  <iframe id="faqPopupIframe"
-        src="/faq_popup"
-        style="
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 400px;
-            height: 95vh;
-            border: 1px solid #ccc;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-            z-index: 9999;
-            display: none; /* 最初は非表示 */
-        ">
-  </iframe>
-<!-- toggle関数 -->
-  <script>
-  function toggleFaqIframe() {
-    const iframe = document.getElementById("faqPopupIframe");
-    const isVisible = iframe.style.display === "block";
-    iframe.style.display = isVisible ? "none" : "block";
-  }
-  function toggleFaqIframe() {
-    const iframe = document.getElementById("faqPopupIframe");
-    const isVisible = iframe.style.display === "block";
-    iframe.style.display = isVisible ? "none" : "block";
-  }
-
-  // ✅ 親windowがiframeから「close」命令を受け取るリスナー
-  window.addEventListener("message", (event) => {
-    if (event.data === "closeFaqPopup") {
-      toggleFaqIframe();
-    }
-  });
-</script>
-
-<script>
-  // HARUHIチャット：最後の発言へスクロール（GPT風）
-  function scrollToLastMessage() {
-    const lastMessage = document.getElementById("last-message");
-    if (lastMessage) {
-      lastMessage.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  }
-
-  window.addEventListener('load', () => {
-    setTimeout(scrollToLastMessage, 300);  // ページ再描画後にスクロール
-  });
-</script>
-<script>
-  // 🌸 HARUHI - 新しいチャットセッション生成と切り替え
-  let session_id = generateSessionId();  // 初期 session_id（画面読み込み時）
-
-  document.addEventListener('DOMContentLoaded', () => {
-    const newChatBtn = document.getElementById('new-chat-btn');
-    if (newChatBtn) {
-      newChatBtn.addEventListener('click', () => {
-        // ✅ チャットログエリアをクリア
-        const chatLog = document.getElementById('chat-log-content');
-        if (chatLog) {
-          chatLog.innerHTML = '';
-        }
-
-        // ✅ セッションIDを新たに生成
-        session_id = generateSessionId();
-
-        // ✅ GETフォーム（モード変更用）の hidden input を更新
-        const sessionInput = document.querySelector('input[name="session_id"]');
-        if (sessionInput) {
-          sessionInput.value = session_id;
-        }
-
-        // ✅ POSTフォーム（メッセージ送信用）の hidden input を更新
-        const sessionInputPost = document.getElementById('session_id_input_post');
-        if (sessionInputPost) {
-          sessionInputPost.value = session_id;
-        }
-
-        // ✅ フォームの action URL に新しい session_id を付与
-        const chatForm = document.querySelector('form[action^="/chat_ui/"]');
-        if (chatForm) {
-          chatForm.action = `/chat_ui/guest?session_id=${session_id}`;
-        }
-
-        // ✅ デバッグログ
-        console.log("🆕 新しいセッションを開始:", session_id);
-      });
-    }
-  });
-
-  // 🌸 セッションID生成関数
-  function generateSessionId() {
-    const timestamp = new Date().toISOString().replace(/[-:T.]/g, '').slice(0, 14);
-    const randomPart = Math.random().toString(36).substring(2, 8);
-    return `session-${timestamp}-${randomPart}`;
-  }
-</script>
-
 </html>
