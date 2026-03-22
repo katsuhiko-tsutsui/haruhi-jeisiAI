@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>HARUHI 認証完了</title>
+    <style>
+        body {
+            background: #f5f3ff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            font-family: sans-serif;
+        }
+        .card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 4px 24px rgba(124,58,237,0.10);
+        }
+        .icon { font-size: 48px; margin-bottom: 16px; }
+        .title { color: #7c3aed; font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+        .sub { color: #aaa; font-size: 13px; margin-bottom: 24px; }
+        .btn {
+            background: #7c3aed;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 32px;
+            font-size: 15px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn:hover { background: #6d28d9; color: #fff; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="icon">✅</div>
+    <div class="title">メール認証が完了しました</div>
+    <div class="sub">HARUHIへようこそ。ログインしてください。</div>
+    <a href="/login" class="btn">ログイン画面へ</a>
+</div>
+</body>
+</html>

@@ -1,7 +1,7 @@
 import os
 import uuid
 from datetime import datetime
-from flask import Blueprint, request, jsonify, render_template
+from flask import Blueprint, request, jsonify, render_template, redirect, url_for, session
 import openai
 
 from .haruhi_rag_engine import RagEngineHARUHI
@@ -13,7 +13,38 @@ from dotenv import load_dotenv
 load_dotenv()
 
 main_bp = Blueprint("main", __name__)
+# =====================================================
+# 認証チェック用ヘルパー
+# =====================================================
+def get_current_user():
+    """
+    sessionからuser_idを取得する。
+    フロントエンドからのAPIリクエストはAuthorization headerから取得。
+    """
+    # APIリクエスト（JSON）の場合はAuthorization headerを確認
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        token = auth_header.replace("Bearer ", "")
+        # Supabaseでトークン検証
+        import requests as req
+        res = req.get(
+            f"{os.getenv('SUPABASE_URL')}/auth/v1/user",
+            headers={
+                "Authorization": f"Bearer {token}",
+                "apikey": os.getenv("SUPABASE_KEY")
+            }
+        )
+        if res.status_code == 200:
+            return res.json().get("id")
+    return None
 
+
+def require_login():
+    """未認証の場合はloginページへリダイレクト"""
+    user_id = get_current_user()
+    if not user_id:
+        return redirect(url_for("main.login")), None
+    return None, user_id
 client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 
@@ -53,8 +84,8 @@ def save_raw_log(user_id, session_id, role, message, evidence=None):
 # =====================================================
 @main_bp.route("/create_session", methods=["POST"])
 def create_session():
-    data = request.get_json()
-    user_id = data.get("user_id", "guest_user")
+    data = request.get_json() or {}
+    user_id = get_current_user() or data.get("user_id", "guest_user")
 
     session_id = str(uuid.uuid4())
 
@@ -91,6 +122,7 @@ def haruhi_chat():
         data = request.get_json()
         user_message = data.get("message", "").strip()
         session_id = data.get("session_id")
+        user_id = get_current_user() or data.get("user_id", "guest_user")
 
         if not user_message:
             return jsonify({"error": "Empty message"}), 400
@@ -99,9 +131,8 @@ def haruhi_chat():
             return jsonify({"error": "No session"}), 400
 
         # --------------------------
-        # 1. HARUHI 専用RAG（FAQなし）
+        # 1. HARUHI 専用RAG
         # --------------------------
-        # 中学校理科専用RAGの条件
         result = haruhi_engine.answer(user_query=user_message)
 
         if result is None:
@@ -109,30 +140,27 @@ def haruhi_chat():
 
         reply, rag_meta = result
 
-
-        # ======== デバッグ出力追加（RAGの中身を確認）========
         print("\n[DEBUG] Curriculum RAG results:")
         print(rag_meta.get("curriculum"))
 
         print("\n[DEBUG] LessonPlan RAG results:")
         print(rag_meta.get("lesson_plans"))
-        # =======================================================
-
 
         # --------------------------
-        # 2. PDG保存（ユーザー発話のみ）
+        # 2. PDG保存（ユーザー発話）
         # --------------------------
         user_log = save_chat_message_with_pdg(
-            user_id="guest_user",
+            user_id=user_id,
             session_id=session_id,
             message=user_message,
             role="user",
         )
+
         if user_log is None:
             return jsonify({"error": "PDG保存エラー"}), 500
 
         # --------------------------
-        # 3. 生のアシスタント応答保存
+        # 3. アシスタント応答保存
         # --------------------------
         evidence = {
             "curriculum": rag_meta.get("curriculum"),
@@ -140,7 +168,7 @@ def haruhi_chat():
         }
 
         save_raw_log(
-            user_id="guest_user",
+            user_id=user_id,
             session_id=session_id,
             role="assistant",
             message=reply,
@@ -148,7 +176,7 @@ def haruhi_chat():
         )
 
         # --------------------------
-        # 4. セッションタイトルの自動生成
+        # 4. セッションタイトル生成
         # --------------------------
         try:
             ses = (
@@ -169,6 +197,7 @@ def haruhi_chat():
                     ],
                     max_tokens=50,
                 )
+
                 new_title = title_res.choices[0].message.content.strip()
 
                 supabase.table("haruhi_sessions").update(
@@ -250,9 +279,13 @@ def get_session_messages(session_id):
 @main_bp.route("/get_sessions", methods=["GET"])
 def get_sessions():
     try:
+        data = request.args
+        user_id = get_current_user() or data.get("user_id", "guest_user")
+
         rows = (
             supabase.table("haruhi_sessions")
             .select("id, title, created_at")
+            .eq("user_id", user_id)
             .order("created_at", desc=True)
             .execute()
         )
@@ -323,3 +356,50 @@ def get_faqs():
 @main_bp.route("/", methods=["GET"])
 def index():
     return render_template("chat_ui.html")
+
+# =====================================================
+# PDG Tree取得
+# =====================================================
+@main_bp.route("/get_pdg_tree/<user_id>", methods=["GET"])
+def get_pdg_tree(user_id):
+
+    try:
+        rows = (
+            supabase.table("haruhi_chat_logs")
+            .select("id, message, parent_id, timestamp")
+            .eq("user_id", user_id)
+            .eq("role", "user")
+            .order("timestamp", desc=False)
+            .execute()
+        )
+
+        nodes = []
+
+        for r in rows.data:
+            nodes.append({
+                "id": r["id"],
+                "text": r["message"],
+                "parent": r["parent_id"],
+                "time": r["timestamp"]   # created_at → timestamp
+            })
+
+        return jsonify(nodes)
+
+    except Exception as e:
+        print("[ERROR] get_pdg_tree:", e)
+        return jsonify([])
+
+# =====================================================
+# ログイン画面
+# =====================================================
+@main_bp.route("/login", methods=["GET"])
+def login():
+    return render_template("login.html")
+
+
+# =====================================================
+# Auth コールバック（メール確認後の遷移先）
+# =====================================================
+@main_bp.route("/auth/callback", methods=["GET"])
+def auth_callback():
+    return render_template("auth_callback.html")

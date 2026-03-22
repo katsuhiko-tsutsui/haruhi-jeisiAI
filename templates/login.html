@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>HARUHI ログイン</title>
+    <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        body {
+            background: #f5f3ff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .login-card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 40px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 4px 24px rgba(124,58,237,0.10);
+        }
+        .haruhi-title {
+            color: #7c3aed;
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .haruhi-subtitle {
+            color: #aaa;
+            font-size: 12px;
+            margin-bottom: 32px;
+        }
+        .tab-btn {
+            background: none;
+            border: none;
+            font-size: 15px;
+            font-weight: 600;
+            color: #aaa;
+            padding: 8px 16px 8px 0;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+        .tab-btn.active {
+            color: #7c3aed;
+            border-bottom: 2px solid #7c3aed;
+        }
+        .form-control:focus {
+            border-color: #7c3aed;
+            box-shadow: 0 0 0 3px rgba(124,58,237,0.10);
+        }
+        .btn-haruhi {
+            background: #7c3aed;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            width: 100%;
+            margin-top: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-haruhi:hover { background: #6d28d9; }
+        .msg { font-size: 13px; margin-top: 12px; min-height: 20px; }
+        .msg.error { color: #ef4444; }
+        .msg.success { color: #10b981; }
+    </style>
+</head>
+<body>
+<div class="login-card">
+    <div class="haruhi-title">教育思考支援AI | HARUHI</div>
+    <div class="haruhi-subtitle">Human-Augmented Reflective Understanding for Holistic Intelligence</div>
+
+    <!-- タブ -->
+    <div style="margin-bottom: 24px;">
+        <button class="tab-btn active" id="tab-login" onclick="switchTab('login')">ログイン</button>
+        <button class="tab-btn" id="tab-signup" onclick="switchTab('signup')">新規登録</button>
+    </div>
+
+    <!-- ログインフォーム -->
+    <div id="form-login">
+        <div class="mb-3">
+            <label class="form-label" style="font-size:13px;color:#555;">メールアドレス</label>
+            <input type="email" id="login-email" class="form-control" placeholder="example@jeisi.jp">
+        </div>
+        <div class="mb-3">
+            <label class="form-label" style="font-size:13px;color:#555;">パスワード</label>
+            <input type="password" id="login-password" class="form-control" placeholder="パスワード">
+        </div>
+        <button class="btn-haruhi" onclick="handleLogin()">ログイン</button>
+        <div class="msg" id="login-msg"></div>
+    </div>
+
+    <!-- 新規登録フォーム -->
+    <div id="form-signup" style="display:none;">
+        <div class="mb-3">
+            <label class="form-label" style="font-size:13px;color:#555;">メールアドレス</label>
+            <input type="email" id="signup-email" class="form-control" placeholder="example@jeisi.jp">
+        </div>
+        <div class="mb-3">
+            <label class="form-label" style="font-size:13px;color:#555;">パスワード（8文字以上）</label>
+            <input type="password" id="signup-password" class="form-control" placeholder="パスワード">
+        </div>
+        <button class="btn-haruhi" onclick="handleSignup()">登録してメール確認</button>
+        <div class="msg" id="signup-msg"></div>
+    </div>
+</div>
+
+<script src="/static/js/auth.js"></script>
+</body>
+</html>

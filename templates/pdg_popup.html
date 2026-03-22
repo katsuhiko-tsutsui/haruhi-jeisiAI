@@ -1,0 +1,157 @@
+<div id="pdg-launcher" onclick="togglePDGTree()" style="
+    position: fixed; bottom: 90px; right: 20px;
+    width: 52px; height: 52px; border-radius: 50%;
+    background: #7c3aed; display: flex;
+    align-items: center; justify-content: center;
+    cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    z-index: 999; font-size: 22px;
+">🌿</div>
+
+<div id="pdg-tree-window" style="
+    display: none; position: fixed;
+    bottom: 150px; right: 90px;
+    width: 700px; height: 500px;
+    min-width: 300px; min-height: 200px;
+    background: #fff; border: 1px solid #ddd;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    z-index: 1000; flex-direction: column;
+    resize: both; overflow: hidden;
+">
+    <div id="pdg-drag-handle" style="
+        display: flex; align-items: center;
+        justify-content: space-between;
+        padding: 12px 16px;
+        border-bottom: 1px solid #eee;
+        background: #f9f6ff;
+        border-radius: 12px 12px 0 0;
+        cursor: grab; user-select: none;
+    ">
+        <span style="font-size:14px; font-weight:600; color:#7c3aed;">🌿 思考の系譜（PDGツリー）</span>
+        <button onclick="togglePDGTree()" style="
+            background: none; border: none;
+            font-size: 18px; cursor: pointer;
+            color: #999; line-height: 1;
+        ">×</button>
+    </div>
+
+    <div id="pdg-tree-content" style="
+        flex: 1; overflow: auto;
+        padding: 16px; background: #fafafa;
+        border-radius: 0 0 12px 12px;
+    "></div>
+</div>
+
+<script>
+(function() {
+    const win = document.getElementById("pdg-tree-window");
+    const handle = document.getElementById("pdg-drag-handle");
+
+    // ── ドラッグ移動 ──
+    let dragging = false;
+    let dragOffsetX = 0;
+    let dragOffsetY = 0;
+
+    handle.addEventListener("mousedown", function(e) {
+        if (e.target.tagName === "BUTTON") return;
+        dragging = true;
+        const rect = win.getBoundingClientRect();
+        dragOffsetX = e.clientX - rect.left;
+        dragOffsetY = e.clientY - rect.top;
+        handle.style.cursor = "grabbing";
+        e.preventDefault();
+    });
+
+    document.addEventListener("mousemove", function(e) {
+        if (!dragging) return;
+        const x = e.clientX - dragOffsetX;
+        const y = e.clientY - dragOffsetY;
+        win.style.left   = x + "px";
+        win.style.top    = y + "px";
+        win.style.right  = "auto";
+        win.style.bottom = "auto";
+    });
+
+    document.addEventListener("mouseup", function() {
+        if (dragging) {
+            dragging = false;
+            handle.style.cursor = "grab";
+        }
+    });
+
+    // ── リサイズ（端をドラッグ） ──
+    // resize: both + overflow: hidden だと効かないブラウザがあるため
+    // 右端・下端・右下コーナーを自前で実装
+
+    const EDGE = 8; // 反応するピクセル幅
+    let resizing = false;
+    let resizeDir = "";
+    let startX, startY, startW, startH, startL, startT;
+
+    win.addEventListener("mousemove", function(e) {
+        if (resizing) return;
+        const rect = win.getBoundingClientRect();
+        const onRight  = e.clientX >= rect.right  - EDGE;
+        const onBottom = e.clientY >= rect.bottom - EDGE;
+        const onLeft   = e.clientX <= rect.left   + EDGE;
+        const onTop    = e.clientY <= rect.top    + EDGE;
+
+        if      (onRight  && onBottom) { win.style.cursor = "se-resize"; resizeDir = "se"; }
+        else if (onLeft   && onBottom) { win.style.cursor = "sw-resize"; resizeDir = "sw"; }
+        else if (onRight  && onTop)    { win.style.cursor = "ne-resize"; resizeDir = "ne"; }
+        else if (onLeft   && onTop)    { win.style.cursor = "nw-resize"; resizeDir = "nw"; }
+        else if (onRight)              { win.style.cursor = "e-resize";  resizeDir = "e";  }
+        else if (onBottom)             { win.style.cursor = "s-resize";  resizeDir = "s";  }
+        else if (onLeft)               { win.style.cursor = "w-resize";  resizeDir = "w";  }
+        else if (onTop)                { win.style.cursor = "n-resize";  resizeDir = "n";  }
+        else                           { win.style.cursor = "";          resizeDir = "";   }
+    });
+
+    win.addEventListener("mousedown", function(e) {
+        if (!resizeDir || e.target === handle || e.target.tagName === "BUTTON") return;
+        resizing = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        const rect = win.getBoundingClientRect();
+        startW = rect.width;
+        startH = rect.height;
+        startL = rect.left;
+        startT = rect.top;
+        e.preventDefault();
+    });
+
+    document.addEventListener("mousemove", function(e) {
+        if (!resizing) return;
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        const minW = 300, minH = 200;
+
+        if (resizeDir.includes("e")) {
+            win.style.width = Math.max(minW, startW + dx) + "px";
+        }
+        if (resizeDir.includes("s")) {
+            win.style.height = Math.max(minH, startH + dy) + "px";
+        }
+        if (resizeDir.includes("w")) {
+            const newW = Math.max(minW, startW - dx);
+            win.style.width = newW + "px";
+            win.style.left  = (startL + startW - newW) + "px";
+            win.style.right = "auto";
+        }
+        if (resizeDir.includes("n")) {
+            const newH = Math.max(minH, startH - dy);
+            win.style.height = newH + "px";
+            win.style.top    = (startT + startH - newH) + "px";
+            win.style.bottom = "auto";
+        }
+    });
+
+    document.addEventListener("mouseup", function() {
+        if (resizing) {
+            resizing = false;
+            win.style.cursor = "";
+            resizeDir = "";
+        }
+    });
+})();
+</script>

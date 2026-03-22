@@ -1,7 +1,17 @@
-// ================================
+fetch// ================================
 // HARUHI ver.1.20 Chat Handler (GPT風UI対応版)
 // JEISI 2025
 // ================================
+// =========================
+// user_id生成（端末識別）
+// =========================
+
+let userId = localStorage.getItem("haruhi_user_id");
+
+if (!userId) {
+    userId = crypto.randomUUID();
+    localStorage.setItem("haruhi_user_id", userId);
+}
 
 document.addEventListener("DOMContentLoaded", () => {
 
@@ -53,15 +63,20 @@ document.addEventListener("DOMContentLoaded", () => {
         let sessionId = localStorage.getItem("haruhi_session_id");
 
         try {
+            const accessToken = sessionStorage.getItem("haruhi_access_token") || "";
             const res = await fetch("/haruhi_chat", {
                 method: "POST",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({
-                    message: text,
-                    session_id: sessionId,
-                    thinking_mode: mode
-                })
-            });
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${accessToken}`
+            },
+            body: JSON.stringify({
+                message: text,
+                session_id: sessionId,
+                user_id: userId,
+                thinking_mode: mode
+            })
+        });
 
             const data = await res.json();
 
@@ -84,7 +99,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // セッション一覧読み込み
     // =========================
     async function loadSessions() {
-        const res = await fetch("/get_sessions");
+        const res = await fetch(`/get_sessions?user_id=${userId}`);
         const data = await res.json();
 
         sessionList.innerHTML = "";
@@ -125,10 +140,17 @@ document.addEventListener("DOMContentLoaded", () => {
     newChatBtn.addEventListener("click", async () => {
         try {
             // （1）サーバーに新セッションを作成
-            const res = await fetch("/create_session", {
-                method: "POST"
-            });
-
+                const accessToken = sessionStorage.getItem("haruhi_access_token") || "";
+                const res = await fetch("/create_session", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${accessToken}`
+                    },
+                     body: JSON.stringify({
+                        user_id: userId
+                    })
+                });
             const data = await res.json();
 
             // （2）session_id を保存
@@ -167,3 +189,28 @@ document.addEventListener("DOMContentLoaded", () => {
     // =========================
     loadSessions();
 });
+
+async function loadPDG(){
+
+    const userId = localStorage.getItem("haruhi_user_id");
+
+    const res = await fetch(`/get_pdg_tree/${userId}`);
+    const nodes = await res.json();
+
+    const container = document.getElementById("pdg-tree");
+    container.innerHTML = "<h3>PDG 思考系譜</h3>";
+
+    nodes.forEach(n => {
+
+        const div = document.createElement("div");
+
+        div.style.marginLeft = n.parent ? "30px" : "0px";
+
+        div.innerText = "• " + n.text;
+
+        container.appendChild(div);
+
+    });
+}
+
+loadPDG();
