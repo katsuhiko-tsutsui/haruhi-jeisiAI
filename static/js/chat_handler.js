@@ -5,7 +5,9 @@
 // user_id生成（端末識別）
 // =========================
 
-let userId = localStorage.getItem("haruhi_user_id");
+// ログイン済みの場合はSupabaseのUUIDを優先して使用
+let userId = sessionStorage.getItem("haruhi_user_id")
+          || localStorage.getItem("haruhi_user_id");
 
 if (!userId) {
     userId = crypto.randomUUID();
@@ -157,10 +159,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 localStorage.setItem("haruhi_session_id", data.session_id);
             }
 
-            // （3）メッセージ欄をクリア
+            // （３）メッセージ欄をクリア＆初期メッセージ表示
             chatMessages.innerHTML = "";
+            appendMessage("assistant", "こんにちは。今日はどんなことを考えますか？");
 
-            // （4）セッション一覧更新
+            // （４）セッション一覧更新
             loadSessions();
         } catch (error) {
             appendMessage("assistant", "⚠ 新規チャットの作成に失敗しました。\n" + error);
