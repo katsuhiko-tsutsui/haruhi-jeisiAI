@@ -296,6 +296,7 @@ class RagEngineHARUHI:
         user_query: str,
         curriculum: List[Dict[str, Any]],
         lessons: List[Dict[str, Any]],
+        context_messages: List[Dict[str, str]] = None,  # ★ PDG+直近履歴
     ):
         has_rag = bool(curriculum) or bool(lessons)
 
@@ -374,10 +375,23 @@ class RagEngineHARUHI:
 
         user = f"{rag_context}\n\n質問：\n{user_query}"
 
-        return [
-            {"role": "system", "content": system},
-            {"role": "user",   "content": user},
-        ]
+        # ---------- メッセージ構築（PDG+直近履歴を注入） ----------
+        messages = [{"role": "system", "content": system}]
+
+        if context_messages:
+            # コンテキスト履歴をsystem直後に挿入
+            messages.append({
+                "role": "system",
+                "content": (
+                    "=== 会話コンテキスト（PDG問いの系譜 + 直近の対話） ===\n"
+                    "以下は現在の問いに至るまでの思考の流れです。\n"
+                    "これを踏まえて、問いの意図と文脈を理解した上で回答してください。\n"
+                )
+            })
+            messages.extend(context_messages)
+
+        messages.append({"role": "user", "content": user})
+        return messages
 
     # ================================
     # GPT 応答生成
@@ -396,7 +410,7 @@ class RagEngineHARUHI:
     # ================================
     # 統合処理：HARUHI回答
     # ================================
-    def answer(self, user_query: str):
+    def answer(self, user_query: str, context_messages: List[Dict[str, str]] = None):
         print("=== ANSWER() ENTER ===")
 
         # ① 校種・教科推定
@@ -453,8 +467,8 @@ class RagEngineHARUHI:
         reply_mode = "RAG" if (curriculum or lessons) else "LLM"
         print(f"[DEBUG] reply_mode: {reply_mode}")
 
-        # ⑥ プロンプト構築
-        messages = self._build_prompt(user_query, curriculum, lessons)
+        # ⑥ プロンプト構築（PDG+直近履歴を渡す）
+        messages = self._build_prompt(user_query, curriculum, lessons, context_messages)
         if messages is None:
             raise RuntimeError("_build_prompt returned None")
 

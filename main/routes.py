@@ -131,9 +131,72 @@ def haruhi_chat():
             return jsonify({"error": "No session"}), 400
 
         # --------------------------
-        # 1. HARUHI 専用RAG
+        # 1. コンテキスト構築（PDG親ノード + 直近3往復）
         # --------------------------
-        result = haruhi_engine.answer(user_query=user_message)
+        context_messages = []
+        seen_ids = set()
+
+        try:
+            # ① 直近3往復（6件）をDBから取得
+            recent_rows = (
+                supabase.table("haruhi_chat_logs")
+                .select("id, role, message, response, parent_id, timestamp")
+                .eq("session_id", session_id)
+                .neq("role", "system")
+                .order("timestamp", desc=True)
+                .limit(6)
+                .execute()
+            )
+            recent = list(reversed(recent_rows.data or []))
+
+            for r in recent:
+                rid = r.get("id")
+                if rid in seen_ids:
+                    continue
+                seen_ids.add(rid)
+                content = r["message"] if r["role"] == "user" else r["response"]
+                if content:
+                    context_messages.append({
+                        "role": r["role"],
+                        "content": content
+                    })
+
+            # ② PDG親ノードを取得（直近ユーザー発話のparent_id）
+            last_user = next(
+                (r for r in reversed(recent) if r["role"] == "user"), None
+            )
+            if last_user and last_user.get("parent_id"):
+                parent_id = last_user["parent_id"]
+                if parent_id not in seen_ids:
+                    parent_row = (
+                        supabase.table("haruhi_chat_logs")
+                        .select("id, role, message, timestamp")
+                        .eq("id", parent_id)
+                        .execute()
+                    )
+                    if parent_row.data:
+                        p = parent_row.data[0]
+                        seen_ids.add(p["id"])
+                        if p.get("message"):
+                            # 親ノードは先頭に挿入（系譜の起点として）
+                            context_messages.insert(0, {
+                                "role": "user",
+                                "content": f"[PDG親問い] {p['message']}"
+                            })
+
+            print(f"[DEBUG] context_messages count: {len(context_messages)}")
+
+        except Exception as e:
+            print("[ERROR] context build:", e)
+            context_messages = []
+
+        # --------------------------
+        # 2. HARUHI 専用RAG
+        # --------------------------
+        result = haruhi_engine.answer(
+            user_query=user_message,
+            context_messages=context_messages if context_messages else None
+        )
 
         if result is None:
             raise RuntimeError("haruhi_engine.answer() returned None")
@@ -147,7 +210,7 @@ def haruhi_chat():
         print(rag_meta.get("lesson_plans"))
 
         # --------------------------
-        # 2. PDG保存（ユーザー発話）
+        # 3. PDG保存（ユーザー発話）
         # --------------------------
         user_log = save_chat_message_with_pdg(
             user_id=user_id,
@@ -160,7 +223,7 @@ def haruhi_chat():
             return jsonify({"error": "PDG保存エラー"}), 500
 
         # --------------------------
-        # 3. アシスタント応答保存
+        # 4. アシスタント応答保存
         # --------------------------
         evidence = {
             "curriculum": rag_meta.get("curriculum"),
@@ -176,7 +239,7 @@ def haruhi_chat():
         )
 
         # --------------------------
-        # 4. セッションタイトル生成
+        # 5. セッションタイトル生成
         # --------------------------
         try:
             ses = (
