@@ -193,25 +193,23 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 async function loadPDG(){
-
-    const userId = localStorage.getItem("haruhi_user_id");
-
-    const res = await fetch(`/get_pdg_tree/${userId}`);
+    // ↓ tokenをheaderで渡す。URLからuser_idを除去
+    const accessToken = sessionStorage.getItem("haruhi_access_token") || "";
+    const res = await fetch(`/get_pdg_tree`, {
+        headers: {
+            "Authorization": `Bearer ${accessToken}`
+        }
+    });
     const nodes = await res.json();
 
     const container = document.getElementById("pdg-tree");
     container.innerHTML = "<h3>PDG 思考系譜</h3>";
 
     nodes.forEach(n => {
-
         const div = document.createElement("div");
-
         div.style.marginLeft = n.parent ? "30px" : "0px";
-
         div.innerText = "• " + n.text;
-
         container.appendChild(div);
-
     });
 }
 

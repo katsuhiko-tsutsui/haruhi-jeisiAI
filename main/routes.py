@@ -426,27 +426,30 @@ def index():
 # =====================================================
 # PDG Tree取得
 # =====================================================
-@main_bp.route("/get_pdg_tree/<user_id>", methods=["GET"])
-def get_pdg_tree(user_id):
+@main_bp.route("/get_pdg_tree", methods=["GET"])  # ← user_idをURLから除去
+def get_pdg_tree():
+    user_id = get_current_user()  # ← ログイン中のユーザーIDをサーバーで取得
+
+    if not user_id:
+        return jsonify({"error": "unauthorized"}), 401
 
     try:
         rows = (
             supabase.table("haruhi_chat_logs")
             .select("id, message, parent_id, timestamp")
-            .eq("user_id", user_id)
+            .eq("user_id", user_id)   # ← 認証済みuser_idでフィルタ
             .eq("role", "user")
             .order("timestamp", desc=False)
             .execute()
         )
 
         nodes = []
-
         for r in rows.data:
             nodes.append({
                 "id": r["id"],
                 "text": r["message"],
                 "parent": r["parent_id"],
-                "time": r["timestamp"]   # created_at → timestamp
+                "time": r["timestamp"]
             })
 
         return jsonify(nodes)

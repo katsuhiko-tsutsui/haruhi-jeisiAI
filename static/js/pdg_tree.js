@@ -6,17 +6,25 @@ function togglePDGTree() {
         win.style.display = "none";
     } else {
         win.style.display = "flex";
-        loadPDGTree("guest_user");
+        // ↓ "guest_user" を削除。user_idはサーバー側で認証済みのものを使う
+        loadPDGTree();
     }
 }
 
-async function loadPDGTree(userId) {
+// ↓ userId引数を廃止。Authorization headerでサーバーに認証させる
+async function loadPDGTree() {
     const container = document.getElementById("pdg-tree-content");
     if (!container) return;
 
     container.innerHTML = "<p style='color:#aaa;font-size:13px;padding:12px'>読み込み中...</p>";
 
-    const res = await fetch(`/get_pdg_tree/${userId}`);
+    // ↓ URLからuser_idを除去。tokenをheaderで渡す
+    const accessToken = sessionStorage.getItem("haruhi_access_token") || "";
+    const res = await fetch(`/get_pdg_tree`, {
+        headers: {
+            "Authorization": `Bearer ${accessToken}`
+        }
+    });
     const nodes = await res.json();
 
     if (!nodes || nodes.length === 0) {
