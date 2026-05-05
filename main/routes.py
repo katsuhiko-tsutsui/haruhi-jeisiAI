@@ -312,9 +312,9 @@ def get_navigator_advice():
         pdg_nodes = []
         for r in rows.data or []:
             if r.get("message"):
+                # 変更後（カラムが存在しなくてもエラーにならない）
                 pdg_nodes.append({
                     "text": r["message"],
-                    "abstraction_level": r.get("abstraction_level", ""),
                 })
 
         # 思考ナビゲーター生成
