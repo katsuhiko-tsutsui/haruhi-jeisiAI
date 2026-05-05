@@ -301,7 +301,7 @@ def get_navigator_advice():
         # セッション内のユーザー発話をPDGノードとして取得
         rows = (
             supabase.table("haruhi_chat_logs")
-            .select("id, message, abstraction_level, timestamp")
+            .select("id, message, timestamp")
             .eq("session_id", session_id)
             .eq("user_id", user_id)
             .eq("role", "user")
