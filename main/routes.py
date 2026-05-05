@@ -282,6 +282,52 @@ def haruhi_chat():
         print("[ERROR] haruhi_chat:", e)
         return jsonify({"error": "server error"}), 500
 
+# =====================================================
+# 思考ナビゲーター
+# =====================================================
+@main_bp.route("/get_navigator_advice", methods=["POST"])
+def get_navigator_advice():
+    try:
+        user_id = get_current_user()
+        if not user_id:
+            return jsonify({"error": "unauthorized"}), 401
+
+        data = request.get_json() or {}
+        session_id = data.get("session_id")
+
+        if not session_id:
+            return jsonify({"error": "No session"}), 400
+
+        # セッション内のユーザー発話をPDGノードとして取得
+        rows = (
+            supabase.table("haruhi_chat_logs")
+            .select("id, message, abstraction_level, timestamp")
+            .eq("session_id", session_id)
+            .eq("user_id", user_id)
+            .eq("role", "user")
+            .order("timestamp", desc=False)
+            .execute()
+        )
+
+        pdg_nodes = []
+        for r in rows.data or []:
+            if r.get("message"):
+                pdg_nodes.append({
+                    "text": r["message"],
+                    "abstraction_level": r.get("abstraction_level", ""),
+                })
+
+        # 思考ナビゲーター生成
+        advice = haruhi_engine.generate_navigator_advice(pdg_nodes)
+
+        return jsonify({
+            "advice": advice,
+            "question_count": len(pdg_nodes),
+        })
+
+    except Exception as e:
+        print("[ERROR] get_navigator_advice:", e)
+        return jsonify({"error": "server error"}), 500
 
 # =====================================================
 # さくら FAQ チャット

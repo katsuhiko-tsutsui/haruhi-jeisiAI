@@ -1,11 +1,8 @@
-// HARUHI ver.1.20 Chat Handler (GPT風UI対応版)
-// JEISI 2025
+// HARUHI ver.1.31 Chat Handler
+// 思考ナビゲーター対応版
+// JEISI 2026
 // ================================
-// =========================
-// user_id生成（端末識別）
-// =========================
 
-// ログイン済みの場合はSupabaseのUUIDを優先して使用
 let userId = sessionStorage.getItem("haruhi_user_id")
           || localStorage.getItem("haruhi_user_id");
 
@@ -19,17 +16,17 @@ document.addEventListener("DOMContentLoaded", () => {
     const input = document.getElementById("user-input");
     const sendBtn = document.getElementById("send-button");
     const chatMessages = document.getElementById("chat-messages");
-    const modeSelect = document.getElementById("thinking-mode");
-
     const sessionList = document.getElementById("session-list");
     const newChatBtn = document.getElementById("new-chat-btn");
 
+    // 思考ナビゲーター用カウンター
+    let questionCount = 0;
+
     // =========================
-    // メッセージ描画（GPT風）
+    // メッセージ描画
     // =========================
     function appendMessage(role, text) {
         if (role === "assistant") {
-            // HARUHI：画面中央のカード表示
             const wrapper = document.createElement("div");
             wrapper.classList.add("assistant-message");
 
@@ -39,8 +36,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
             wrapper.appendChild(inner);
             chatMessages.appendChild(wrapper);
+        } else if (role === "navigator") {
+            // 思考ナビゲーターメッセージ（専用スタイル）
+            const wrapper = document.createElement("div");
+            wrapper.classList.add("navigator-message");
+
+            const inner = document.createElement("div");
+            inner.classList.add("navigator-card");
+            inner.innerHTML = text.replace(/\n/g, "<br>");
+
+            wrapper.appendChild(inner);
+            chatMessages.appendChild(wrapper);
         } else {
-            // user：右寄せバブル
             const div = document.createElement("div");
             div.classList.add("user-message");
             div.innerText = text;
@@ -50,17 +57,42 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // =========================
+    // 思考ナビゲーター呼び出し
+    // =========================
+    async function fetchNavigatorAdvice() {
+        const sessionId = localStorage.getItem("haruhi_session_id");
+        if (!sessionId) return;
+
+        try {
+            const accessToken = sessionStorage.getItem("haruhi_access_token") || "";
+            const res = await fetch("/get_navigator_advice", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${accessToken}`
+                },
+                body: JSON.stringify({ session_id: sessionId })
+            });
+
+            const data = await res.json();
+            if (data.advice) {
+                appendMessage("navigator", "🧭 **思考ナビゲーター**\n\n" + data.advice);
+            }
+        } catch (err) {
+            console.error("Navigator error:", err);
+        }
+    }
+
+    // =========================
     // チャット送信
     // =========================
     async function sendMessage() {
         const text = input.value.trim();
         if (!text) return;
 
-        // 自分の発話を先に表示
         appendMessage("user", text);
         input.value = "";
 
-        const mode = modeSelect ? modeSelect.value : "reflective";
         let sessionId = localStorage.getItem("haruhi_session_id");
 
         try {
@@ -70,26 +102,28 @@ document.addEventListener("DOMContentLoaded", () => {
                 headers: {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${accessToken}`
-            },
-            body: JSON.stringify({
-                message: text,
-                session_id: sessionId,
-                user_id: userId,
-                thinking_mode: mode
-            })
-        });
+                },
+                body: JSON.stringify({
+                    message: text,
+                    session_id: sessionId,
+                    user_id: userId,
+                })
+            });
 
             const data = await res.json();
 
-            // 新セッションIDを保存
             if (data.session_id) {
                 localStorage.setItem("haruhi_session_id", data.session_id);
             }
 
-            // HARUHIの返答
             appendMessage("assistant", data.reply);
 
-            // セッション一覧更新
+            // 問いカウントを増やし、3問ごとにナビゲーター自動起動
+            questionCount++;
+            if (questionCount % 3 === 0) {
+                await fetchNavigatorAdvice();
+            }
+
             loadSessions();
         } catch (err) {
             appendMessage("assistant", "⚠ エラーが発生しました。\n" + err);
@@ -100,7 +134,10 @@ document.addEventListener("DOMContentLoaded", () => {
     // セッション一覧読み込み
     // =========================
     async function loadSessions() {
-        const res = await fetch(`/get_sessions?user_id=${userId}`);
+        const accessToken = sessionStorage.getItem("haruhi_access_token") || "";
+        const res = await fetch(`/get_sessions?user_id=${userId}`, {
+            headers: { "Authorization": `Bearer ${accessToken}` }
+        });
         const data = await res.json();
 
         sessionList.innerHTML = "";
@@ -112,6 +149,7 @@ document.addEventListener("DOMContentLoaded", () => {
             div.dataset.id = sess.session_id;
 
             div.addEventListener("click", () => {
+                questionCount = 0; // セッション切替時にカウントリセット
                 selectSession(sess.session_id);
             });
 
@@ -135,40 +173,45 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // ==========================================
-    // 新しいチャット（New Chat）
-    // ==========================================
+    // =========================
+    // 新しいチャット
+    // =========================
     newChatBtn.addEventListener("click", async () => {
         try {
-            // （1）サーバーに新セッションを作成
-                const accessToken = sessionStorage.getItem("haruhi_access_token") || "";
-                const res = await fetch("/create_session", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${accessToken}`
-                    },
-                     body: JSON.stringify({
-                        user_id: userId
-                    })
-                });
+            const accessToken = sessionStorage.getItem("haruhi_access_token") || "";
+            const res = await fetch("/create_session", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${accessToken}`
+                },
+                body: JSON.stringify({ user_id: userId })
+            });
             const data = await res.json();
 
-            // （2）session_id を保存
             if (data.session_id) {
                 localStorage.setItem("haruhi_session_id", data.session_id);
             }
 
-            // （３）メッセージ欄をクリア＆初期メッセージ表示
             chatMessages.innerHTML = "";
+            questionCount = 0; // 新チャット時にカウントリセット
             appendMessage("assistant", "こんにちは。今日はどんなことを考えますか？");
 
-            // （４）セッション一覧更新
             loadSessions();
         } catch (error) {
             appendMessage("assistant", "⚠ 新規チャットの作成に失敗しました。\n" + error);
         }
     });
+
+    // =========================
+    // 🧭 手動ナビゲーターボタン
+    // =========================
+    const navigatorBtn = document.getElementById("navigator-btn");
+    if (navigatorBtn) {
+        navigatorBtn.addEventListener("click", async () => {
+            await fetchNavigatorAdvice();
+        });
+    }
 
     // =========================
     // イベント
@@ -192,24 +235,26 @@ document.addEventListener("DOMContentLoaded", () => {
     loadSessions();
 });
 
-async function loadPDG(){
-    // ↓ tokenをheaderで渡す。URLからuser_idを除去
+// =========================
+// PDGツリー読み込み
+// =========================
+async function loadPDG() {
+    const pdgContainer = document.getElementById("pdg-tree");
+    if (!pdgContainer) return; // PDG表示要素がないページでは何もしない
+
     const accessToken = sessionStorage.getItem("haruhi_access_token") || "";
     const res = await fetch(`/get_pdg_tree`, {
-        headers: {
-            "Authorization": `Bearer ${accessToken}`
-        }
+        headers: { "Authorization": `Bearer ${accessToken}` }
     });
     const nodes = await res.json();
 
-    const container = document.getElementById("pdg-tree");
-    container.innerHTML = "<h3>PDG 思考系譜</h3>";
+    pdgContainer.innerHTML = "<h3>PDG 思考系譜</h3>";
 
     nodes.forEach(n => {
         const div = document.createElement("div");
         div.style.marginLeft = n.parent ? "30px" : "0px";
         div.innerText = "• " + n.text;
-        container.appendChild(div);
+        pdgContainer.appendChild(div);
     });
 }
 

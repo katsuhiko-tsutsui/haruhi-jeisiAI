@@ -486,3 +486,55 @@ class RagEngineHARUHI:
             "stage":        stage,
             "reply_mode":   reply_mode,
         }
+    # ================================
+    # 思考ナビゲーター生成
+    # ================================
+    def generate_navigator_advice(
+        self,
+        pdg_nodes: list,
+    ) -> str:
+        """
+        PDGノード一覧から思考ナビゲーターのアドバイスを生成する。
+        pdg_nodes: [{"text": "問いのテキスト", "abstraction_level": "concrete"|"intermediate"|"abstract"}, ...]
+        """
+        try:
+            if not pdg_nodes:
+                return "まだ問いの記録がありません。最初の問いを投げかけてみましょう。"
+
+            # 問いの一覧をテキスト化
+            questions_text = "\n".join(
+                [f"- {n.get('text', '')}" for n in pdg_nodes if n.get("text")]
+            )
+
+            system = (
+                "あなたはJEISIの教育思考支援AI『HARUHI』です。\n"
+                "教師の思考の伴走者として、問いの系譜（PDG）を分析し、\n"
+                "思考の現在地と次の一手を示してください。\n\n"
+                "【出力形式】必ず以下の3項目を含めてください。\n"
+                "🧭 **思考の現在地**\n"
+                "（これまでの問いの流れを2〜3文で要約する）\n\n"
+                "🔍 **まだ探っていない領域**\n"
+                "（問いの偏りや未検討の観点を具体的に指摘する）\n\n"
+                "➡ **次の問いへの提案**\n"
+                "（次に投げかけると思考が深まる問いを1〜2個示す）\n"
+            )
+
+            user = (
+                f"以下はこれまでの問いの一覧です：\n\n{questions_text}\n\n"
+                "上記の問いの系譜を分析し、思考ナビゲーターとしての助言を生成してください。"
+            )
+
+            messages = [
+                {"role": "system", "content": system},
+                {"role": "user", "content": user},
+            ]
+
+            resp = client.chat.completions.create(
+                model=CHAT_MODEL,
+                messages=messages,
+            )
+            return resp.choices[0].message.content.strip()
+
+        except Exception as e:
+            print("[ERROR] generate_navigator_advice:", e)
+            return "思考ナビゲーターの生成中にエラーが発生しました。"

@@ -12,6 +12,24 @@
 
     <!-- HARUHI UI全体スタイル -->
     <link rel="stylesheet" href="/static/css/haruhi_ui.css">
+    <style>
+    .navigator-message {
+        display: flex;
+        justify-content: flex-start;
+        margin: 12px 0;
+    }
+    .navigator-card {
+        background: linear-gradient(135deg, #f0f7ff, #e8f4e8);
+        border-left: 4px solid #4a9b6f;
+        border-radius: 8px;
+        padding: 16px 20px;
+        max-width: 85%;
+        font-size: 0.95rem;
+        line-height: 1.7;
+        color: #2c3e50;
+        white-space: pre-wrap;
+    }
+    </style>
 </head>
 
 <body>
@@ -33,13 +51,11 @@
         </div>
 
         <!-- 思考モード -->
+        <!-- 変更後 -->
         <div class="mode-select-area">
-            <select id="thinking-mode" class="form-select form-select-sm">
-                <option value="reflective">内省型 (Reflective)</option>
-                <option value="creative">創造型 (Creative)</option>
-                <option value="factual">事実型 (Factual)</option>
-                <option value="metacognitive">省察促進型 (Meta-Cognitive)</option>
-            </select>
+            <button id="navigator-btn" class="btn btn-outline-success btn-sm" title="思考を振り返る">
+                🧭 思考を振り返る
+            </button>
         </div>
 
         <!-- チャットコンテンツ -->
