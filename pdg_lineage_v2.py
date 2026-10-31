@@ -60,7 +60,6 @@ def check_parent_with_gpt(parent_question: str, new_question: str) -> bool:
             {"role": "system", "content": "あなたは問い同士の系譜的関係を判定するAIです。"},
             {"role": "user", "content": prompt},
         ],
-        temperature=0.0
     )
 
     result = response.choices[0].message.content.strip()
