@@ -9,9 +9,6 @@ from openai import OpenAI
 from dotenv import load_dotenv
 from supabase_client import supabase
 
-from pdg_question_vectorizer_v2 import generate_question_vector
-from pdg_question_detector_v2 import is_question
-
 # === 環境変数 ===
 load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -24,10 +21,11 @@ SIMILARITY_THRESHOLD = 0.80
 # GPT 最終判定（親子関係が妥当か確認）
 # --------------------------------------
 GPT_CHECK_PROMPT = """
-あなたは「問いの系譜」を見極める教育AIです。
+あなたは「問いの系譜」を判定する教育AIです。
 
-以下の２つの問いについて、
-新しい問いが既存の問いの「発展・深化・派生」に当たるかどうかを判定してください。
+以下の2つの問いについて、
+新しい問いが、既存の問いの内容・論点・文脈を受け継いで生じた
+系譜的に関連する問いであるかどうかを判定してください。
 
 ### 既存の問い（候補）
 {parent_question}
@@ -37,8 +35,9 @@ GPT_CHECK_PROMPT = """
 
 ### 判定基準
 - 論点・概念・文脈が受け継がれている場合 → YES
-- 表面的な単語一致やテーマが異なる場合 → NO
-- 無関係・異分野 → NO
+- 既存の問いを具体化・派生・再焦点化・再構成した問いである場合 → YES
+- 表面的な単語一致だけで、文脈上のつながりがない場合 → NO
+- 無関係、または異なる論点に移っている場合 → NO
 
 ### 出力形式（必ずどちらか）：
 YES
@@ -56,9 +55,9 @@ def check_parent_with_gpt(parent_question: str, new_question: str) -> bool:
     )
 
     response = client.chat.completions.create(
-        model="gpt-4o",
+        model="gpt-6.1-sol",
         messages=[
-            {"role": "system", "content": "あなたは教育文脈の系譜判定AIです。"},
+            {"role": "system", "content": "あなたは問い同士の系譜的関係を判定するAIです。"},
             {"role": "user", "content": prompt},
         ],
         temperature=0.0
@@ -77,10 +76,9 @@ def determine_parent_id(
     q_vec
 ):
     """
-    1) 問い判定
-    2) ベクトル生成
-    3) RPC により類似問い検索
-    4) GPT による最終確認（A案）
+    1) 生成済みの問いベクトルを受け取る
+    2) RPC により類似問いを検索する
+    3) GPT により親子関係を最終確認する
     """
 
     # ③ Supabase RPC で類似問い取得
@@ -118,24 +116,3 @@ def determine_parent_id(
 
     # ⑥ 親ID確定
     return parent_question_id, similarity, parent_question_text
-
-
-# --------------------------------------
-# 保存処理と連携するための外部IF
-# --------------------------------------
-def process_pdg_for_message(message_text: str, user_id: str):
-    """
-    HARUHI の保存処理から利用する外部IF。
-    呼び出すと parent_id 判定結果が返る。
-    """
-    parent_id, similarity, parent_text = determine_parent_id(
-    message_text,
-    user_id
-    )
-
-    return {
-        "parent_id": parent_id,
-        "similarity": similarity,
-        "parent_text": parent_text
-    }
-
