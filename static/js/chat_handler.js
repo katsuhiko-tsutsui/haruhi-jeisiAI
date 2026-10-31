@@ -163,7 +163,15 @@ document.addEventListener("DOMContentLoaded", () => {
     async function selectSession(id) {
         localStorage.setItem("haruhi_session_id", id);
 
-        const res = await fetch(`/get_session_messages/${id}`);
+        const accessToken =
+            sessionStorage.getItem("haruhi_access_token") || "";
+
+        const res = await fetch(`/get_session_messages/${id}`, {
+            headers: {
+                "Authorization": `Bearer ${accessToken}`
+            }
+        });
+
         const data = await res.json();
 
         chatMessages.innerHTML = "";
