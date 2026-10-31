@@ -43,10 +43,3 @@ def generate_question_vector(text: str) -> list:
     )
 
     return response.data[0].embedding
-
-
-if __name__ == "__main__":
-    # 動作テスト
-    vec = generate_question_vector("学習指導要領の目標構造を説明してください。")
-    print(f"ベクトル次元: {len(vec)}")
-    print(vec[:10])  # 先頭10要素だけ表示
