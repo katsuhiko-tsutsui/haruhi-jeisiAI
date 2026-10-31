@@ -122,7 +122,10 @@ def haruhi_chat():
         data = request.get_json()
         user_message = data.get("message", "").strip()
         session_id = data.get("session_id")
-        user_id = get_current_user() or data.get("user_id", "guest_user")
+        user_id = get_current_user()
+
+        if not user_id:
+            return jsonify({"error": "unauthorized"}), 401
 
         if not user_message:
             return jsonify({"error": "Empty message"}), 400
