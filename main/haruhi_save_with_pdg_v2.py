@@ -63,7 +63,11 @@ def save_chat_message_with_pdg(user_id: str, session_id: str, message: str, role
     parent_id = None
     if question_flag:
         try:
-            pdg_result = determine_parent_id(message, user_id)
+            pdg_result = determine_parent_id(
+                message,
+                user_id,
+                vector
+            )
             parent_id = pdg_result[0]
         except Exception as e:
             print("[PDG error]", e)

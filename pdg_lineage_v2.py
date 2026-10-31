@@ -71,20 +71,17 @@ def check_parent_with_gpt(parent_question: str, new_question: str) -> bool:
 # --------------------------------------
 # PDG v2 main：parent_id 推論 + 保存処理
 # --------------------------------------
-def determine_parent_id(message_text: str, user_id: str):
+def determine_parent_id(
+    message_text: str,
+    user_id: str,
+    q_vec
+):
     """
     1) 問い判定
     2) ベクトル生成
     3) RPC により類似問い検索
     4) GPT による最終確認（A案）
     """
-
-    # ① 問いでなければ PDG 対象外
-    if not is_question(message_text):
-        return None, 0.0, None
-
-    # ② ベクトル生成
-    q_vec = generate_question_vector(message_text)
 
     # ③ Supabase RPC で類似問い取得
     response = supabase.rpc(
