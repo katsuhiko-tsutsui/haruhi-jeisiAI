@@ -71,7 +71,7 @@ def check_parent_with_gpt(parent_question: str, new_question: str) -> bool:
 # --------------------------------------
 # PDG v2 main：parent_id 推論 + 保存処理
 # --------------------------------------
-def determine_parent_id(message_text: str):
+def determine_parent_id(message_text: str, user_id: str):
     """
     1) 問い判定
     2) ベクトル生成
@@ -91,7 +91,8 @@ def determine_parent_id(message_text: str):
         "match_questions_v2",
         {
             "query_embedding": q_vec,
-            "match_count": 5
+            "match_count": 5,
+            "p_user_id": user_id
         }
     ).execute()
 
@@ -125,12 +126,15 @@ def determine_parent_id(message_text: str):
 # --------------------------------------
 # 保存処理と連携するための外部IF
 # --------------------------------------
-def process_pdg_for_message(message_text: str):
+def process_pdg_for_message(message_text: str, user_id: str):
     """
     HARUHI の保存処理から利用する外部IF。
     呼び出すと parent_id 判定結果が返る。
     """
-    parent_id, similarity, parent_text = determine_parent_id(message_text)
+    parent_id, similarity, parent_text = determine_parent_id(
+    message_text,
+    user_id
+    )
 
     return {
         "parent_id": parent_id,
@@ -138,9 +142,3 @@ def process_pdg_for_message(message_text: str):
         "parent_text": parent_text
     }
 
-
-if __name__ == "__main__":
-    # 動作確認
-    test = "ICT活用は学習指導要領のどこに位置づく？"
-    result = process_pdg_for_message(test)
-    print(result)
