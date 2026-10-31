@@ -477,9 +477,6 @@ def get_faqs():
 # =====================================================
 @main_bp.route("/", methods=["GET"])
 def index():
-    token = request.args.get("token", "")
-    if not token:
-        return redirect(url_for("main.login"))
     return render_template("chat_ui.html")
 
 # =====================================================

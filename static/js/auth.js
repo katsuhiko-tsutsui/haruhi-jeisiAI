@@ -42,7 +42,7 @@ async function handleLogin() {
         sessionStorage.setItem("haruhi_user_id", data.user.id);
         sessionStorage.setItem("haruhi_email", data.user.email);
         // チャット画面へ遷移（トークンをURLパラメータで渡す）
-        window.location.href = "/?token=" + data.access_token;
+        window.location.href = "/";
     } else {
         msg.className = "msg error";
         msg.textContent = "ログインに失敗しました。メールアドレスかパスワードを確認してください。";
