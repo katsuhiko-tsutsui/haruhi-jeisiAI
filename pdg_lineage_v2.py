@@ -64,6 +64,9 @@ def check_parent_with_gpt(parent_question: str, new_question: str) -> bool:
     )
 
     result = response.choices[0].message.content.strip()
+
+    print(f"[PDG lineage GPT raw result] {repr(result)}")
+    
     return result == "YES"
 
 
