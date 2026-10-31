@@ -485,6 +485,7 @@ def get_pdg_tree():
             .select("id, message, parent_id, timestamp")
             .eq("user_id", user_id)   # ← 認証済みuser_idでフィルタ
             .eq("role", "user")
+            .eq("is_question", True)
             .order("timestamp", desc=False)
             .execute()
         )
