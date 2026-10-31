@@ -85,7 +85,10 @@ def save_raw_log(user_id, session_id, role, message, evidence=None):
 @main_bp.route("/create_session", methods=["POST"])
 def create_session():
     data = request.get_json() or {}
-    user_id = get_current_user() or data.get("user_id", "guest_user")
+    user_id = get_current_user()
+
+    if not user_id:
+        return jsonify({"error": "unauthorized"}), 401
 
     session_id = str(uuid.uuid4())
 
