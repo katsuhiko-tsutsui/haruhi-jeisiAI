@@ -362,14 +362,17 @@ def sakura_faq_chat():
 @main_bp.route("/get_session_messages/<session_id>", methods=["GET"])
 def get_session_messages(session_id):
     try:
+        user_id = get_current_user()
+        if not user_id:
+            return jsonify({"error": "unauthorized"}), 401
         rows = (
             supabase.table("haruhi_chat_logs")
             .select("role, message, response, timestamp")
             .eq("session_id", session_id)
+            .eq("user_id", user_id)
             .order("timestamp", desc=False)
             .execute()
         )
-
         messages = []
         for r in rows.data:
             content = r["message"] if r["role"] == "user" else r["response"]
@@ -421,6 +424,10 @@ def get_sessions():
 @main_bp.route("/update_session_title", methods=["POST"])
 def update_session_title():
     try:
+        user_id = get_current_user()
+        if not user_id:
+            return jsonify({"error": "unauthorized"}), 401
+        
         data = request.get_json()
         session_id = data.get("session_id")
         new_title = data.get("title", "").strip()
@@ -430,7 +437,7 @@ def update_session_title():
 
         supabase.table("haruhi_sessions").update(
             {"title": new_title}
-        ).eq("id", session_id).execute()
+        ).eq("id", session_id).eq("user_id", user_id).execute()
 
         return jsonify({"message": "ok", "title": new_title})
 
