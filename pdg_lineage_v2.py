@@ -103,6 +103,8 @@ def determine_parent_id(
     parent_question_id = top["id"]
     parent_question_text = top["message"]
 
+    print(f"[PDG similarity] {similarity} / threshold={SIMILARITY_THRESHOLD}", flush=True)
+
     # ④ 類似度が低い場合は親なし（新規系譜）
     if similarity < SIMILARITY_THRESHOLD:
         return None, similarity, None
