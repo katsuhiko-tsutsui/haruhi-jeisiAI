@@ -410,48 +410,81 @@ class RagEngineHARUHI:
     # ================================
     # 統合処理：HARUHI回答
     # ================================
-    def answer(self, user_query: str, context_messages: List[Dict[str, str]] = None):
+    def answer(
+        self,
+        user_query: str,
+        context_messages: List[Dict[str, str]] = None
+    ):
         print("=== ANSWER() ENTER ===")
 
         # ① 校種・教科推定
         result = self._infer_stage_subject(user_query)
+
         if result is None:
             raise RuntimeError("_infer_stage_subject returned None")
 
         stage, subject = result
         print("[DEBUG] infer_stage_subject:", stage, subject)
 
-        # ② 教科が取れない場合：問い返し
+        # ==================================
+        # ② 教科が特定できない場合
+        #    → 学習指導要領RAGを使わず自然対話
+        # ==================================
         if subject is None:
-            print("RETURN: subject_none")
-            msg = (
-                "今の問いは、とても大切な観点を含んでいます。\n\n"
-                "ただ、どの教科の立場から考えるかによって、"
-                "『見方・考え方』や重視点が変わります。\n\n"
-                "どの教科について考えたいか、教えてもらえますか？\n"
-                "（例：小学校理科／社会／算数／外国語／道徳 など）"
+            print("[DEBUG] subject not detected -> natural dialogue mode")
+
+            curriculum = []
+            lessons = []
+
+            messages = self._build_prompt(
+                user_query,
+                curriculum,
+                lessons,
+                context_messages
             )
-            return msg, {
-                "curriculum":   [],
+
+            if messages is None:
+                raise RuntimeError("_build_prompt returned None")
+
+            reply = self._generate(messages)
+
+            if reply is None:
+                raise RuntimeError("_generate returned None")
+
+            print("RETURN: natural dialogue")
+
+            return reply, {
+                "curriculum": [],
                 "lesson_plans": [],
-                "subject":      None,
-                "stage":        stage,
-                "reply_mode":   "ASK",
+                "subject": None,
+                "stage": stage,
+                "reply_mode": "LLM",
             }
 
+        # ==================================
         # ③ 動的 threshold（教科別調整）
+        # ==================================
         dyn_th = self._auto_threshold(user_query)
 
         if subject in ["SCIENCE", "MATH"]:
             dyn_th = max(dyn_th, 0.55)
-        elif subject in ["JAPANESE", "SOCIAL", "FOREIGN_LANGUAGE", "MORAL"]:
+
+        elif subject in [
+            "JAPANESE",
+            "SOCIAL",
+            "FOREIGN_LANGUAGE",
+            "MORAL"
+        ]:
             dyn_th = max(dyn_th, 0.40)
+
         elif subject == "GENERAL":
             dyn_th = max(dyn_th, 0.35)
 
         print("[DEBUG] threshold:", dyn_th)
 
+        # ==================================
         # ④ 学習指導要領RAG
+        # ==================================
         curriculum = self.search_curriculum(
             query=user_query,
             k=self.top_k,
@@ -459,33 +492,50 @@ class RagEngineHARUHI:
             school_stage=stage,
             subject=subject,
         )
+
         print("[DEBUG] Curriculum RAG results:", curriculum)
 
-        lessons = []  # 指導案RAGは現時点では停止
+        # 指導案RAGは現時点では停止
+        lessons = []
 
+        # ==================================
         # ⑤ reply_mode 判定
-        reply_mode = "RAG" if (curriculum or lessons) else "LLM"
+        # ==================================
+        reply_mode = "RAG" if curriculum else "LLM"
+
         print(f"[DEBUG] reply_mode: {reply_mode}")
 
-        # ⑥ プロンプト構築（PDG+直近履歴を渡す）
-        messages = self._build_prompt(user_query, curriculum, lessons, context_messages)
+        # ==================================
+        # ⑥ プロンプト構築
+        # ==================================
+        messages = self._build_prompt(
+            user_query,
+            curriculum,
+            lessons,
+            context_messages
+        )
+
         if messages is None:
             raise RuntimeError("_build_prompt returned None")
 
-        # ⑦ GPT 応答生成
+        # ==================================
+        # ⑦ GPT応答生成
+        # ==================================
         reply = self._generate(messages)
+
         if reply is None:
             raise RuntimeError("_generate returned None")
 
         print("RETURN: normal")
 
         return reply, {
-            "curriculum":   curriculum,
+            "curriculum": curriculum,
             "lesson_plans": lessons,
-            "subject":      subject,
-            "stage":        stage,
-            "reply_mode":   reply_mode,
+            "subject": subject,
+            "stage": stage,
+            "reply_mode": reply_mode,
         }
+
     # ================================
     # 思考ナビゲーター生成
     # ================================
