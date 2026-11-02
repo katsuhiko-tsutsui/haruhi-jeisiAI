@@ -467,7 +467,7 @@ class RagEngineHARUHI:
         dyn_th = self._auto_threshold(user_query)
 
         if subject in ["SCIENCE", "MATH"]:
-            dyn_th = max(dyn_th, 0.55)
+            dyn_th = 0.40
 
         elif subject in [
             "JAPANESE",
